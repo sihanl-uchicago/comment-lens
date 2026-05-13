@@ -692,7 +692,7 @@ else:
             ],
             "persona": "Best for trend explorers, casual researchers, and consumer insight users."
         }
-    }
+
 
     return templates.get(category, templates["Lifestyle"])
 
