@@ -1,137 +1,264 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="CommentLens", page_icon="🔍", layout="wide")
+st.set_page_config(
+    page_title="CommentLens",
+    page_icon="🔍",
+    layout="wide"
+)
 
+# -----------------------------
+# Smart Query Router
+# -----------------------------
+def classify_query(query):
+    q = query.lower()
+
+    categories = {
+        "Travel": ["杭州", "上海", "北京", "东京", "巴黎", "旅行", "旅游", "酒店", "景点", "city", "trip", "travel", "hotel"],
+        "Beauty": ["面霜", "口红", "护肤", "粉底", "防晒", "敏感肌", "skincare", "makeup", "beauty", "serum"],
+        "Food": ["咖啡", "餐厅", "火锅", "奶茶", "brunch", "restaurant", "coffee", "food", "dessert"],
+        "Fashion": ["lululemon", "aritzia", "穿搭", "衣服", "包", "leggings", "fashion", "outfit"],
+        "Education": ["mba", "留学", "申请", "学校", "大学", "graduate", "school", "career"],
+        "Tech": ["ai", "chatgpt", "app", "软件", "产品", "tech", "tool", "startup"],
+    }
+
+    for category, keywords in categories.items():
+        if any(k in q for k in keywords):
+            return category
+
+    return "Lifestyle"
+
+
+# -----------------------------
+# Demo Insight Generator
+# -----------------------------
+def generate_insights(query, category):
+    templates = {
+        "Travel": {
+            "sentiment": (72, 18, 10),
+            "likes": [
+                "Scenic spots and photo-friendly locations are frequently praised.",
+                "Users mention strong food, cafe, and short-trip potential.",
+                "Many comments frame it as a good weekend or holiday destination."
+            ],
+            "complaints": [
+                "Crowds during holidays are the most common complaint.",
+                "Transportation and itinerary planning can be tiring.",
+                "Some popular spots are described as over-commercialized."
+            ],
+            "quotes": [
+                f"“{query} is beautiful, but I would avoid peak season.”",
+                f"“The hidden local spots are more interesting than the famous ones.”",
+                f"“Great for photos, but planning ahead really matters.”"
+            ],
+            "persona": "Best for weekend travelers, couples, foodies, and photo lovers."
+        },
+        "Beauty": {
+            "sentiment": (64, 22, 14),
+            "likes": [
+                "Texture, packaging, and ease of daily use are frequently mentioned.",
+                "Users value visible but gradual improvement.",
+                "Repeat purchase intention appears when price is reasonable."
+            ],
+            "complaints": [
+                "Effectiveness varies by skin type.",
+                "Price sensitivity is high.",
+                "Some users say the product requires consistent use to see results."
+            ],
+            "quotes": [
+                f"“{query} feels nice, but it is not a miracle product.”",
+                f"“I would repurchase if there is a discount.”",
+                f"“It worked for me, but skin type really matters.”"
+            ],
+            "persona": "Best for skincare beginners, sensitive-skin users, and value-conscious buyers."
+        },
+        "Food": {
+            "sentiment": (69, 20, 11),
+            "likes": [
+                "Taste, atmosphere, and social-sharing value are frequently praised.",
+                "Users often recommend it for friend gatherings.",
+                "Visual presentation and store vibe drive strong interest."
+            ],
+            "complaints": [
+                "Long waiting time is a recurring issue.",
+                "Some users question value for money.",
+                "Experience may vary by location or time of visit."
+            ],
+            "quotes": [
+                f"“{query} is worth trying, but go early to avoid the line.”",
+                f"“The vibe is great for photos.”",
+                f"“Taste is good, but the price is slightly high.”"
+            ],
+            "persona": "Best for foodies, friend gatherings, and social media users."
+        },
+        "Fashion": {
+            "sentiment": (67, 21, 12),
+            "likes": [
+                "Design, fit, and daily wearability are frequently mentioned.",
+                "Brand image creates strong purchase interest.",
+                "Users like items that are easy to style."
+            ],
+            "complaints": [
+                "Sizing can be inconsistent.",
+                "Price is a major concern.",
+                "Some users question durability or cost-performance."
+            ],
+            "quotes": [
+                f"“{query} looks good, but size selection matters.”",
+                f"“I like the style, but I waited for a sale.”",
+                f"“Very wearable for daily outfits.”"
+            ],
+            "persona": "Best for young professionals, lifestyle shoppers, and trend followers."
+        },
+        "Education": {
+            "sentiment": (61, 27, 12),
+            "likes": [
+                "Users care most about outcomes, career value, and peer experience.",
+                "Practical application advice receives strong engagement.",
+                "First-hand experience is considered more trustworthy than generic guides."
+            ],
+            "complaints": [
+                "Cost and uncertainty are major concerns.",
+                "The application process feels stressful.",
+                "Information quality varies significantly across posts."
+            ],
+            "quotes": [
+                f"“{query} is valuable, but you need to be clear about your goal.”",
+                f"“The most useful posts are from people who actually went through it.”",
+                f"“Cost is the biggest thing to consider.”"
+            ],
+            "persona": "Best for applicants, career switchers, and international students."
+        },
+        "Tech": {
+            "sentiment": (66, 24, 10),
+            "likes": [
+                "Users are curious about productivity gains and practical use cases.",
+                "Early adopters share detailed workflows.",
+                "Clear tutorials and examples increase trust."
+            ],
+            "complaints": [
+                "Some users are confused about setup.",
+                "Trust and accuracy concerns remain.",
+                "Users want more examples before paying."
+            ],
+            "quotes": [
+                f"“{query} is useful once you know the right workflow.”",
+                f"“The idea is cool, but onboarding could be better.”",
+                f"“I want more examples before paying for it.”"
+            ],
+            "persona": "Best for students, creators, productivity users, and early adopters."
+        },
+        "Lifestyle": {
+            "sentiment": (58, 29, 13),
+            "likes": [
+                "Users show broad curiosity and emotional engagement.",
+                "Many posts focus on personal experience and decision-making.",
+                "The topic is useful for discovering trends and consumer pain points."
+            ],
+            "complaints": [
+                "Comments are scattered and subjective.",
+                "General searches need stronger filtering.",
+                "Users often disagree depending on personal preference."
+            ],
+            "quotes": [
+                f"“{query} has mixed reviews, so I checked multiple posts.”",
+                f"“The comments are more useful than the post itself.”",
+                f"“It depends a lot on personal preference.”"
+            ],
+            "persona": "Best for trend explorers, casual researchers, and consumer insight users."
+        }
+    }
+
+    return templates.get(category, templates["Lifestyle"])
+
+
+# -----------------------------
+# UI
+# -----------------------------
 st.title("🔍 CommentLens")
-st.subheader("Turn comments into decisions.")
-st.write("An AI demo that extracts hidden concerns, contradictions, and decision signals from Xiaohongshu-style comment sections.")
+st.caption("Turn social comments into consumer insights — fast, structured, and searchable.")
 
-topic = st.text_input(
-    "Enter a topic or decision scenario:",
-    placeholder="e.g., Chicago apartment rental, dental insurance for international students"
+st.markdown(
+    """
+    CommentLens helps users understand what people really say about any topic by summarizing 
+    social-style comments into sentiment, likes, complaints, representative quotes, and best-fit audiences.
+    """
 )
 
-sample = st.selectbox(
-    "Or try a sample case:",
-    ["Chicago apartment rental", "Chicago dental insurance", "US job hunting for international students"]
+st.divider()
+
+st.markdown("### Try a trending search")
+
+suggestions = [
+    "杭州三日游",
+    "Lululemon leggings",
+    "芝加哥咖啡馆",
+    "敏感肌面霜",
+    "MBA申请"
+]
+
+cols = st.columns(len(suggestions))
+
+if "query" not in st.session_state:
+    st.session_state["query"] = ""
+
+for i, suggestion in enumerate(suggestions):
+    if cols[i].button(suggestion):
+        st.session_state["query"] = suggestion
+
+query = st.text_input(
+    "Search any topic",
+    value=st.session_state["query"],
+    placeholder="e.g., 杭州, Aritzia, Chicago brunch, MBA application..."
 )
 
-def generate_report(query):
-    if "dental" in query.lower() or "牙" in query:
-        return {
-            "concerns": [
-                "Whether insurance is accepted before treatment",
-                "Unexpected out-of-pocket costs after deep cleaning",
-                "Long wait time for new patient appointments",
-                "Confusion between routine cleaning and deep cleaning coverage",
-                "Whether international students can claim reimbursement later"
-            ],
-            "contradictions": [
-                ("Post says: “This clinic is very affordable.”", "Comments ask: “Why was my final bill much higher than expected?”"),
-                ("Post says: “Insurance covered everything.”", "Comments suggest coverage varies by plan and procedure type.")
-            ],
-            "hidden": [
-                "Users care less about whether the clinic is ‘good’ and more about billing transparency.",
-                "The most useful comments are about claim failure, reimbursement timing, and exact procedure names.",
-                "Many users do not know they should confirm CDT/procedure codes before treatment."
-            ],
-            "checklist": [
-                "Ask whether the clinic accepts your exact insurance plan.",
-                "Confirm whether the visit is routine cleaning or deep cleaning.",
-                "Ask for an estimated out-of-pocket cost before treatment.",
-                "Check whether reimbursement requires itemized receipts.",
-                "Save all claim documents and procedure codes."
-            ]
-        }
-    elif "job" in query.lower() or "hunting" in query.lower():
-        return {
-            "concerns": [
-                "Visa sponsorship uncertainty",
-                "Whether referrals actually help",
-                "How to interpret HR screening questions",
-                "Timeline pressure before graduation",
-                "Mismatch between job descriptions and actual hiring standards"
-            ],
-            "contradictions": [
-                ("Post says: “Just network more and referrals will work.”", "Comments say: “Referral did not help without a strong fit.”"),
-                ("Post says: “This role sponsors.”", "Comments warn that sponsorship can depend on team, timing, and headcount.")
-            ],
-            "hidden": [
-                "The real anxiety is not resume polishing, but uncertainty around sponsorship and timing.",
-                "Comment sections often contain more actionable information than the original job-hunting post.",
-                "Users want verified examples from people who went through the exact process."
-            ],
-            "checklist": [
-                "Ask about sponsorship timing early.",
-                "Check whether the team has sponsored international candidates before.",
-                "Prepare a clear graduation and availability answer.",
-                "Track referral source, recruiter response, and interview timeline.",
-                "Validate advice against recent candidate comments."
-            ]
-        }
+analyze = st.button("Analyze comments", type="primary")
+
+if analyze:
+    if not query.strip():
+        st.warning("Please enter a topic first.")
     else:
-        return {
-            "concerns": [
-                "Hidden utility fees and unclear rent structure",
-                "Heating quality during Chicago winter",
-                "Safety and transportation at night",
-                "Distance that looks walkable in summer but not in winter",
-                "Laundry, maintenance, and package delivery issues"
-            ],
-            "contradictions": [
-                ("Post says: “10-minute walk to campus.”", "Comments say: “Not realistic during winter or late at night.”"),
-                ("Post says: “Great value apartment.”", "Comments mention extra utility, parking, or management fees."),
-                ("Post says: “Safe neighborhood.”", "Comments ask about specific streets and nighttime safety.")
-            ],
-            "hidden": [
-                "Users are not only asking where to live; they are asking what trade-offs they might regret.",
-                "Comment sections reveal practical concerns that polished posts often skip.",
-                "The most decision-relevant signals are repeated questions, warnings, and contradictory experiences."
-            ],
-            "checklist": [
-                "Confirm whether heating is included in rent.",
-                "Check commute time in winter, not only on a sunny day.",
-                "Ask current residents about maintenance response time.",
-                "Verify laundry, package room, and elevator conditions.",
-                "Search comments for safety concerns by specific block or street."
-            ]
-        }
+        category = classify_query(query)
+        result = generate_insights(query, category)
 
-if st.button("Analyze Comments"):
-    query = topic if topic else sample
-    report = generate_report(query)
+        positive, neutral, negative = result["sentiment"]
 
-    st.divider()
-    st.header(f"Community Intelligence Report: {query}")
+        st.divider()
 
-    col1, col2 = st.columns(2)
+        st.subheader(f"Analysis for: {query}")
+        st.caption(f"Smart category detected: {category}")
 
-    with col1:
-        st.subheader("💬 Top Repeated Concerns")
-        for item in report["concerns"]:
-            st.write(f"- {item}")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Positive", f"{positive}%")
+        col2.metric("Neutral", f"{neutral}%")
+        col3.metric("Negative", f"{negative}%")
 
-        st.subheader("🧩 Hidden Signals From Comments")
-        for item in report["hidden"]:
-            st.write(f"- {item}")
+        st.progress(positive / 100)
 
-    with col2:
-        st.subheader("⚠️ Contradiction Detection")
-        for post, comment in report["contradictions"]:
-            st.warning(f"{post}\n\n→ {comment}")
+        left, right = st.columns(2)
 
-        trust_score = round(random.uniform(3.8, 4.6), 1)
-        st.metric("Comment Reliability Score", f"{trust_score}/5")
+        with left:
+            st.markdown("### ✅ What people like")
+            for item in result["likes"]:
+                st.write(f"- {item}")
 
-    st.subheader("✅ Decision Checklist")
-    for item in report["checklist"]:
-        st.checkbox(item)
+        with right:
+            st.markdown("### ⚠️ Common complaints")
+            for item in result["complaints"]:
+                st.write(f"- {item}")
 
-    st.info(
-        "Prototype logic: Perplexity is used as the research layer to identify public discussion patterns. "
-        "CommentLens turns scattered comments into structured concerns, contradictions, hidden risks, and decision checklists."
-    )
+        st.markdown("### 💬 Representative comments")
+        for quote in result["quotes"]:
+            st.info(quote)
+
+        st.markdown("### 🎯 Best-fit audience")
+        st.success(result["persona"])
+
+        st.markdown("### Product note")
+        st.write(
+            "This MVP uses a rule-based smart query router to simulate open-ended topic understanding. "
+            "In the next version, this layer can be replaced by an LLM API for real-time semantic analysis."
+        )
 
 else:
-    st.info("Enter a topic or choose a sample case, then click Analyze Comments.")
+    st.info("Enter a topic or click a trending search to start.")
