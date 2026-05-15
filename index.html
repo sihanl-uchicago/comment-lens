@@ -306,6 +306,23 @@
 
     function pickTemplate(query) {
       const q = query.toLowerCase();
+
+      if ((q.includes('chicago') || q.includes('芝加哥')) && (q.includes('coffee') || q.includes('cafe') || q.includes('咖啡'))) {
+        return {
+          style: "Local recommendation",
+          recs: [
+            ["Sawada Coffee", "Best for visitors who want a distinctive Chicago coffee experience with a strong atmosphere and memorable specialty drinks.", 90],
+            ["Intelligentsia Coffee", "Best for high-quality coffee and a classic Chicago specialty coffee choice, especially for users who care about beans and consistency.", 88],
+            ["Metric Coffee", "Best for people who prefer a more local roaster feel, strong espresso quality, and a less touristy coffee stop.", 85]
+          ],
+          insights: [
+            ["Local intent detected", "Because the query includes Chicago and coffee/cafe intent, the demo switches from generic cafe analysis to named local recommendations."],
+            ["Different use cases matter", "Sawada fits atmosphere and visitor experience, Intelligentsia fits reliable specialty coffee, and Metric fits local roaster preference."],
+            ["Decision risk", "For real deployment, the system should connect to live review data because hours, crowding, and neighborhood safety can change." ]
+          ]
+        };
+      }
+
       if (q.includes('coffee') || q.includes('cafe') || q.includes('咖啡')) return templates.cafe;
       if (q.includes('restaurant') || q.includes('date') || q.includes('dining') || q.includes('餐厅')) return templates.restaurant;
       return templates.default;
